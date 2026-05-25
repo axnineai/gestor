@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Core v2.90 // Immutable Ledger & Dual Analytics</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-main: #060814;
+            --bg-card: rgba(16, 20, 38, 0.95);
+            --bg-input: #0b0e1a;
+            --primary: #00f0ff;
+            --secondary: #ff007f;
+            --success: #00ff66;
+            --warning: #ffb700;
+            --text-primary: #ffffff;
+            --text-secondary: #8596b0;
+            --border: rgba(255, 255, 255, 0.07);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 550px;
+        }
+
+        header h1 {
+            font-weight: 800;
+            font-size: 1.4rem;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin-top: 3px;
+        }
+
+        .container-master {
+            width: 100%;
+            max-width: 550px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .card h2 i { color: var(--primary); font-size: 0.95rem; }
+
+        /* BALANCES */
+        .balance-master {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .balance-box {
+            background: rgba(11, 14, 26, 0.8);
+            padding: 14px;
+            border-radius: 12px;
+            border-left: 4px solid var(--success);
+        }
+        .balance-box.total-gasto { border-left-color: var(--secondary); }
+        .balance-box p { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; }
+        .balance-box .amount { font-size: 1.25rem; font-weight: 800; margin-top: 4px; letter-spacing: -0.3px; }
+
+        /* INPUTS */
+        .input-group { margin-bottom: 12px; }
+        .input-row-flex { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; }
+        .input-group label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 5px; font-weight: 600; }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            padding: 11px 14px;
+            color: #fff;
+            font-size: 0.88rem;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+
+        .btn {
+            border: none;
+            font-weight: 700;
+            padding: 12px;
+            font-size: 0.88rem;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.15s, filter 0.15s;
+        }
+        .btn-deposit { background: linear-gradient(135deg, var(--success), #00b84c); color: #000; }
+        .btn-expense { background: linear-gradient(135deg, var(--secondary), #d6006a); color: #fff; }
+        .btn-add { background: linear-gradient(135deg, var(--primary), #00b4cc); color: #000; width: 100%; margin-top: 4px; }
+        .btn:active { transform: scale(0.98); }
+
+        /* OBJECTIVOS */
+        .goals-creator-row {
+            background: rgba(11, 14, 26, 0.5);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 14px;
+        }
+        .goals-container { display: flex; flex-direction: column; gap: 12px; }
+        .target-item { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); padding: 14px; border-radius: 12px; }
+        .target-header { display: flex; justify-content: space-between; align-items: center; }
+        .target-title { font-size: 0.85rem; font-weight: 700; color: #fff; }
+        
+        .btn-delete-item { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; font-size: 0.85rem; }
+        .btn-delete-item:hover { color: var(--secondary); }
+
+        .bar-bg { background: #0b0e1a; height: 8px; border-radius: 4px; margin: 10px 0; overflow: hidden; }
+        .bar-fill { background: linear-gradient(90deg, var(--primary), var(--success)); height: 100%; width: 0%; }
+
+        .goal-inject-row { display: flex; gap: 8px; margin-top: 8px; }
+        .goal-inject-row input { flex: 1; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; color: #fff; font-size: 0.85rem; outline: none; }
+        .goal-inject-row .btn { padding: 0 14px; font-size: 0.8rem; border-radius: 8px; }
+
+        /* HISTÓRICO IMUTÁVEL */
+        .history-search-engine {
+            background: rgba(11, 14, 26, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .search-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--primary); letter-spacing: 0.5px; }
+        .search-inputs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .search-inputs-row input { background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; color: #fff; font-size: 0.8rem; outline: none; width: 100%; }
+
+        .history-filters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 12px; }
+        .filter-btn { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-secondary); padding: 7px 0; font-size: 0.72rem; border-radius: 6px; cursor: pointer; font-weight: 600; text-align: center; }
+        .filter-btn.active { background: var(--primary); color: #000; border-color: var(--primary); }
+
+        .history { max-height: 200px; overflow-y: auto; padding-right: 2px; }
+        .history-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.015); padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; border-right: 3px solid transparent; gap: 8px; }
+        .history-row .details { display: flex; flex-direction: column; flex: 1; }
+        .history-row .details span { font-size: 0.82rem; font-weight: 500; color: #fff; }
+        .history-row .details .date { font-size: 0.65rem; color: var(--text-secondary); margin-top: 2px; }
+        
+        .history-right-side { display: flex; align-items: center; gap: 12px; }
+        .history-row .value-txt { font-size: 0.85rem; font-weight: 700; text-align: right; }
+        
+        .btn-reverse { background: transparent; border: none; color: rgba(255,255,255,0.15); cursor: pointer; font-size: 0.85rem; padding: 4px; transition: color 0.2s; }
+        .btn-reverse:hover { color: var(--warning); }
+
+        .history-row.in { border-right-color: var(--success); }
+        .history-row.out { border-right-color: var(--secondary); }
+        .history-row.saved { border-right-color: var(--primary); }
+        .history-row.reversed { border-right-color: var(--warning); opacity: 0.5; }
+
+        /* NOVO GRÁFICO DUPLO: ENTRADAS VS GASTOS */
+        .chart-master-box {
+            background: rgba(11, 14, 26, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+        .chart-row-item {
+            margin-bottom: 12px;
+        }
+        .chart-row-item:last-child { margin-bottom: 0; }
+        .chart-row-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .chart-dual-bar {
+            background: var(--bg-input);
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            width: 100%;
+        }
+        .chart-dual-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 6px;
+            transition: width 0.4s ease-out;
+        }
+        .efficiency-badge {
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed var(--border);
+        }
+
+        /* MODAL ECRÃ COMPLETO */
+        .fullscreen-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #050710;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            padding: 20px 16px;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
+        .modal-header h3 { font-size: 1.05rem; color: #fff; font-weight: 700; text-transform: uppercase; }
+        .btn-close-modal { background: #131930; border: 1px solid var(--border); color: #fff; padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+        .modal-content-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SYSTEM CORE // v2.90</h1>
+        <p>Histórico Imutável e Gráficos de Fluxo Bilateral</p>
+    </header>
+
+    <div class="container-master">
+        
+        <div class="balance-master">
+            <div class="balance-box">
+                <p>Saldo Disponível</p>
+                <div class="amount" id="saldo-general" style="color: var(--success);">0.00 MT</div>
+            </div>
+            <div class="balance-box total-gasto">
+                <p>Total Gasto</p>
+                <div class="amount" id="total-gasto-master" style="color: var(--secondary);">0.00 MT</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-exchange-alt"></i> Painel de Lançamentos</h2>
+            
+            <div class="input-row-flex">
+                <div class="input-group">
+                    <label>Valor da Operação (MT)</label>
+                    <input type="number" id="valor-principal" placeholder="0.00">
+                </div>
+                <div class="input-group">
+                    <label>Data de Registo</label>
+                    <input type="date" id="operacao-data">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Descrição / Natureza do Fluxo</label>
+                <input type="text" id="operacao-nome" placeholder="Ex: Salário, Supermercado...">
+            </div>
+
+            <div class="input-group">
+                <label>Segmento de Destino (Para Gastos)</label>
+                <select id="operacao-categoria">
+                    <option value="Alimentação">Alimentação</option>
+                    <option value="Lazer">Lazer / Viagens</option>
+                    <option value="Hardware">Hardware / Tecnologia</option>
+                    <option value="Fixas">Contas Fixas / Mensais</option>
+                </select>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-deposit" onclick="adicionarFundo()"><i class="fas fa-wallet"></i> Depositar</button>
+                <button class="btn btn-expense" onclick="registrarGasto()"><i class="fas fa-shopping-cart"></i> Gasto</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-crosshairs"></i> Objetivos de Compra Ativos</h2>
+            
+            <div class="goals-creator-row">
+                <div class="input-row-flex" style="grid-template-columns: 1.3fr 1fr; gap: 10px;">
+                    <div class="input-group" style="margin:0;">
+                        <label>Nome do Objetivo</label>
+                        <input type="text" id="novo-alvo-nome" placeholder="Ex: PS5 Pro...">
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label>Custo Total (MT)</label>
+                        <input type="number" id="novo-alvo-custo" placeholder="0.00">
+                    </div>
+                </div>
+                <button class="btn btn-add" onclick="criarNovoObjetivo()"><i class="fas fa-plus-circle"></i> Fixar Novo Alvo</button>
+            </div>
+
+            <div class="goals-container" id="lista-de-objetivos"></div>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-history"></i> Histórico Permanente de Atividades</h2>
+            
+            <div class="history-search-engine" id="container-busca-calendario">
+                <div class="search-title"><i class="fas fa-calendar-alt"></i> Escolher Período de Pesquisa</div>
+                <div class="search-inputs-row">
+                    <input type="date" id="filtro-data-inicio" onchange="dispararFiltroPorData()">
+                    <input type="date" id="filtro-data-fim" onchange="dispararFiltroPorData()">
+                </div>
+            </div>
+
+            <div class="history-filters">
+                <button class="filter-btn active" id="f-hoje" onclick="filtrarHistorico('hoje')">Hoje</button>
+                <button class="filter-btn" id="f-semanal" onclick="filtrarHistorico('semanal')">Semanal</button>
+                <button class="filter-btn" id="f-mensal" onclick="filtrarHistorico('mensal')">Mensal</button>
+                <button class="filter-btn" id="f-anual" onclick="filtrarHistorico('anual')">Anual</button>
+                <button class="filter-btn" id="f-outros" onclick="ativarModoOutros()">Outros</button>
+            </div>
+
+            <div class="history" id="historico-fluxo"></div>
+
+            <button class="btn" style="background: #11152c; border: 1px solid var(--border); color: var(--primary); margin-top: 12px; font-size: 0.82rem; width: 100%;" onclick="abrirEcraCompleto()">
+                <i class="fas fa-expand-arrows-alt"></i> Ver Logs em Ecrã Completo
+            </button>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 14px 0 10px 0;">
+
+            <h2><i class="fas fa-chart-bar"></i> Fluxo Corrente Dinâmico</h2>
+            
+            <div class="chart-master-box">
+                <div class="chart-row-item">
+                    <div class="chart-row-header">
+                        <span style="color: var(--success);"><i class="fas fa-arrow-down"></i> Total Entradas</span>
+                        <span id="txt-val-entradas" style="color: #fff; font-weight:700;">0.00 MT</span>
+                    </div>
+                    <div class="chart-dual-bar">
+                        <div class="chart-dual-fill" id="bar-fill-entradas" style="background: linear-gradient(90deg, #00b84c, var(--success));"></div>
+                    </div>
+                </div>
+
+                <div class="chart-row-item">
+                    <div class="chart-row-header">
+                        <span style="color: var(--secondary);"><i class="fas fa-arrow-up"></i> Total Gastos</span>
+                        <span id="txt-val-gastos" style="color: #fff; font-weight:700;">0.00 MT</span>
+                    </div>
+                    <div class="chart-dual-bar">
+                        <div class="chart-dual-fill" id="bar-fill-gastos" style="background: linear-gradient(90deg, #d6006a, var(--secondary));"></div>
+                    </div>
+                </div>
+
+                <div class="efficiency-badge" id="txt-eficiencia-resultado">
+                    Rentabilidade de Fluxo: 100% Retido
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="fullscreen-modal" id="modal-logs">
+        <div class="modal-header">
+            <h3><i class="fas fa-database" style="color:var(--primary)"></i> Arquivo Geral de Lançamentos</h3>
+            <button class="btn-close-modal" onclick="fecharEcraCompleto()"><i class="fas fa-times"></i> Fechar</button>
+        </div>
+        <div class="modal-content-scroll" id="modal-lista-rows"></div>
+    </div>
+
+    <script>
+        let bd = JSON.parse(localStorage.getItem('CORE_V29_DATA')) || {
+            saldoBancario: 0,
+            totalGastoGlobal: 0,
+            categoriasGastos: { "Alimentação": 0, "Lazer": 0, "Hardware": 0, "Fixas": 0 },
+            transacoes: [],
+            objetivos: [{ id: 1, nome: "PlayStation 5 Pro", custo: 5000, guardado: 0 }]
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('operacao-data').value = new Date().toISOString().split('T')[0];
+        });
+
+        function obterDataInput() {
+            const val = document.getElementById("operacao-data").value;
+            if(!val) return new Date().toISOString();
+            const p = val.split('-');
+            return new Date(p[0], p[1] - 1, p[2], 12, 0, 0).toISOString();
+        }
+
+        function salvarECalcular() {
+            localStorage.setItem('CORE_V29_DATA', JSON.stringify(bd));
+            recalcularDashboard();
+        }
+
+        function adicionarFundo() {
+            const valor = parseFloat(document.getElementById("valor-principal").value);
+            const nome = document.getElementById("operacao-nome").value || "Depósito de Fundos";
+            if (isNaN(valor) || valor <= 0) { alert("Introduza um valor correto."); return; }
+
+            bd.saldoBancario += valor;
+            bd.transacoes.unshift({ id: Date.now(), tipo: 'in', nome: nome, valor: valor, data: obterDataInput() });
+            bd.transacoes.sort((a,b) => new Date(b.data) - new Date(a.data));
+            limparFormularios();
+            salvarECalcular();
+        }
+
+        function registrarGasto() {
+            const valor = parseFloat(document.getElementById("valor-principal").value);
+            const nome = document.getElementById("operacao-nome").value;
+            const categoria = document.getElementById("operacao-categoria").value;
+            if (!nome || isNaN(valor) || valor <= 0) { alert("Valide os dados do gasto."); return; }
+
+            bd.saldoBancario -= valor;
+            bd.totalGastoGlobal += valor;
+            bd.categoriasGastos[categoria] += valor;
+            bd.transacoes.unshift({ id: Date.now(), tipo: 'out', nome: nome, valor: valor, categoria: categoria, data: obterDataInput() });
+            bd.transacoes.sort((a,b) => new Date(b.data) - new Date(a.data));
+            limparFormularios();
+            salvarECalcular();
+        }
+
+        function estornarTransacao(id) {
+            const tOrigem = bd.transacoes.find(item => item.id === id);
+            if(!tOrigem || tOrigem.tipo === 'reversed') return;
+
+            if(!confirm(`Criar contra-lançamento para reverter a operação "${tOrigem.nome}"?`)) return;
+
+            const novoId = Date.now();
+            
+            if (tOrigem.tipo === 'in') {
+                bd.saldoBancario -= tOrigem.valor;
+                bd.transacoes.unshift({
+                    id: novoId,
+                    tipo: 'reversed',
+                    nome: `[ESTORNO] ${tOrigem.nome}`,
+                    valor: tOrigem.valor,
+                    data: new Date().toISOString()
+                });
+            } 
+            else if (tOrigem.tipo === 'out') {
+                bd.saldoBancario += tOrigem.valor;
+                bd.totalGastoGlobal -= tOrigem.valor;
+                if(bd.categoriasGastos[tOrigem.categoria]) {
+                    bd.categoriasGastos[tOrigem.categoria] = Math.max(0, bd.categoriasGastos[tOrigem.categoria] - tOrigem.valor);
+                }
+                bd.transacoes.unshift({
+                    id: novoId,
+                    tipo: 'reversed',
+                    nome: `[ESTORNO] ${tOrigem.nome}`,
+                    valor: tOrigem.valor,
+                    data: new Date().toISOString()
+                });
+            } 
+            else if (tOrigem.tipo === 'saved') {
+                bd.saldoBancario += tOrigem.valor;
+                if (tOrigem.metaId) {
+                    const obj = bd.objetivos.find(o => o.id === tOrigem.metaId);
+                    if (obj) obj.guardado = Math.max(0, obj.guardado - tOrigem.valor);
+                }
+                bd.transacoes.unshift({
+                    id: novoId,
+                    tipo: 'reversed',
+                    nome: `[ESTORNO] Reversão de Poupança`,
+                    valor: tOrigem.valor,
+                    data: new Date().toISOString()
+                });
+            }
+
+            tOrigem.nome = `[ANULADA] ${tOrigem.nome}`;
+            tOrigem.tipo = 'reversed';
+
+            bd.transacoes.sort((a,b) => new Date(b.data) - new Date(a.data));
+            salvarECalcular();
+
+            if(document.getElementById("modal-logs").style.display === "flex") abrirEcraCompleto();
+        }
+
+        function criarNovoObjetivo() {
+            const nome = document.getElementById("novo-alvo-nome").value;
+            const custo = parseFloat(document.getElementById("novo-alvo-custo").value);
+            if (!nome || isNaN(custo) || custo <= 0) { alert("Dados do objetivo em falta."); return; }
+
+            bd.objetivos.push({ id: Date.now(), nome: nome, custo: custo, guardado: 0 });
+            document.getElementById("novo-alvo-nome").value = "";
+            document.getElementById("novo-alvo-custo").value = "";
+            salvarECalcular();
+        }
+
+        function apagarObjetivo(id) {
+            if(!confirm("Remover este painel de objetivo do ecrã?")) return;
+            bd.objetivos = bd.objetivos.filter(o => o.id !== id);
+            salvarECalcular();
+        }
+
+        function alimentarObjetivo(id) {
+            const input = document.getElementById(`input-money-obj-${id}`);
+            const valor = parseFloat(input.value);
+            if (isNaN(valor) || valor <= 0 || valor > bd.saldoBancario) { alert("Verifique o saldo ou valor."); return; }
+
+            const obj = bd.objetivos.find(o => o.id === id);
+            bd.saldoBancario -= valor;
+            obj.guardado += valor;
+            
+            bd.transacoes.unshift({ 
+                id: Date.now(), 
+                tipo: 'saved', 
+                nome: `Retido p/: ${obj.nome}`, 
+                valor: valor, 
+                metaId: obj.id, 
+                data: new Date().toISOString() 
+            });
+            bd.transacoes.sort((a,b) => new Date(b.data) - new Date(a.data));
+            salvarECalcular();
+        }
+
+        function limparFormularios() {
+            document.getElementById("valor-principal").value = "";
+            document.getElementById("operacao-nome").value = "";
+        }
+
+        function renderizarObjetivos() {
+            const container = document.getElementById("lista-de-objetivos");
+            container.innerHTML = "";
+            if (bd.objetivos.length === 0) {
+                container.innerHTML = `<p style="text-align:center; font-size:0.75rem; color:var(--text-secondary); padding:4px 0;">Nenhum painel ativo.</p>`;
+                return;
+            }
+            bd.objetivos.forEach(obj => {
+                let falta = Math.max(0, obj.custo - obj.guardado);
+                let pct = Math.min(100, (obj.guardado / obj.custo) * 100);
+
+                const div = document.createElement("div");
+                div.className = "target-item";
+                div.innerHTML = `
+                    <div class="target-header">
+                        <span class="target-title">${obj.nome.toUpperCase()}</span>
+                        <button class="btn-delete-item" onclick="apagarObjetivo(${obj.id})"><i class="fas fa-eye-slash"></i></button>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; font-size:0.72rem; margin-top:4px;">
+                        <div>Poupança: <font color="var(--primary)" style="font-weight:700;">${obj.guardado.toFixed(2)} MT</font></div>
+                        <div style="text-align:right;">Falta: <font color="var(--secondary)" style="font-weight:700;">${falta.toFixed(2)} MT</font></div>
+                    </div>
+                    <div class="bar-bg"><div class="bar-fill" style="width: ${pct}%"></div></div>
+                    <div class="goal-inject-row">
+                        <input type="number" id="input-money-obj-${obj.id}" placeholder="Valor (MT)">
+                        <button class="btn btn-deposit" onclick="alimentarObjetivo(${obj.id})"><i class="fas fa-piggy-bank"></i> Enviar</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function ativarModoOutros() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('f-outros').classList.add('active');
+            document.getElementById('container-busca-calendario').style.display = 'flex';
+            executarRenderEAnaliticos('calendario');
+        }
+
+        function dispararFiltroPorData() {
+            executarRenderEAnaliticos('calendario');
+        }
+
+        function filtrarHistorico(filtro) {
+            document.getElementById('container-busca-calendario').style.display = 'none';
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if(document.getElementById(`f-${filtro}`)) document.getElementById(`f-${filtro}`).classList.add('active');
+            
+            executarRenderEAnaliticos(filtro);
+        }
+
+        function executarRenderEAnaliticos(modo) {
+            const box = document.getElementById("historico-fluxo");
+            box.innerHTML = "";
+            const agora = new Date();
+
+            let acumuladoEntradas = 0;
+            let acumuladoGastos = 0;
+
+            const filtradas = bd.transacoes.filter(t => {
+                const dataT = new Date(t.data);
+                
+                if (modo === 'calendario') {
+                    const inicioInput = document.getElementById("filtro-data-inicio").value;
+                    const fimInput = document.getElementById("filtro-data-fim").value;
+                    let condicao = true;
+                    if (inicioInput) condicao = condicao && (dataT >= new Date(inicioInput).setHours(0,0,0,0));
+                    if (fimInput) condicao = condicao && (dataT <= new Date(fimInput).setHours(23,59,59,999));
+                    return condicao;
+                }
+
+                const diff = Math.ceil(Math.abs(agora - dataT) / (1000 * 60 * 60 * 24));
+                if (modo === 'hoje') {
+                    return dataT.toDateString() === agora.toDateString();
+                }
+                if (modo === 'semanal') return diff <= 7;
+                if (modo === 'mensal') return diff <= 30;
+                if (modo === 'anual') return diff <= 365;
+                return true;
+            });
+
+            // PROCESSAR GRÁFICOS EM LINHAS SEPARADAS BASEADO NO FILTRO ATIVO
+            filtradas.forEach(t => {
+                if(t.tipo === 'in') acumuladoEntradas += t.valor;
+                if(t.tipo === 'out' || t.tipo === 'saved') acumuladoGastos += t.valor;
+            });
+
+            atualizarPainelGrafico(acumuladoEntradas, acumuladoGastos);
+
+            if (filtradas.length === 0) {
+                box.innerHTML = `<p style="text-align:center; font-size:0.75rem; color:var(--text-secondary); padding:15px 0;">Nenhum movimento neste escopo.</p>`;
+                return;
+            }
+
+            filtradas.forEach(t => {
+                const div = document.createElement("div");
+                div.className = `history-row ${t.tipo}`;
+                
+                let sinal = t.tipo === 'in' ? '+' : (t.tipo === 'reversed' ? '±' : '-');
+                let cor = t.tipo === 'in' ? 'var(--success)' : (t.tipo === 'out' ? 'var(--secondary)' : (t.tipo === 'saved' ? 'var(--primary)' : 'var(--warning)'));
+                let dataF = new Date(t.data).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+
+                let btnEstorno = t.tipo !== 'reversed' ? `<button class="btn-reverse" onclick="estornarTransacao(${t.id})" title="Estornar"><i class="fas fa-history"></i></button>` : '';
+
+                div.innerHTML = `
+                    <div class="details"><span>${t.nome}</span><span class="date">${dataF}</span></div>
+                    <div class="history-right-side">
+                        <span class="value-txt" style="color:${cor}">${sinal}${t.valor.toFixed(2)} MT</span>
+                        ${btnEstorno}
+                    </div>
+                `;
+                box.appendChild(div);
+            });
+        }
+
+        function atualizarPainelGrafico(entradas, gastos) {
+            document.getElementById("txt-val-entradas").innerText = `${entradas.toFixed(2)} MT`;
+            document.getElementById("txt-val-gastos").innerText = `${gastos.toFixed(2)} MT`;
+
+            // Calcular proporção para as barras não quebrarem o layout (escala de 0% a 100%)
+            const maximo = Math.max(entradas, gastos);
+            let pctEntradas = maximo > 0 ? (entradas / maximo) * 100 : 0;
+            let pctGastos = maximo > 0 ? (gastos / maximo) * 100 : 0;
+
+            document.getElementById("bar-fill-entradas").style.width = `${pctEntradas}%`;
+            document.getElementById("bar-fill-gastos").style.width = `${pctGastos}%`;
+
+            // Métrica de Eficiência
+            const elRes = document.getElementById("txt-eficiencia-resultado");
+            if (entradas === 0 && gastos === 0) {
+                elRes.innerText = "Sem fluxo comercial ativo no período.";
+            } else if (entradas >= gastos) {
+                let poupadoPct = entradas > 0 ? ((entradas - gastos) / entradas) * 100 : 100;
+                elRes.innerHTML = `<font color="var(--success)"><i class="fas fa-smile"></i> Saudável:</font> Retiveste <b>${poupadoPct.toFixed(0)}%</b> do capital gerado.`;
+            } else {
+                let deficitPct = entradas > 0 ? ((gastos - entradas) / entradas) * 100 : 100;
+                elRes.innerHTML = `<font color="var(--secondary)"><i class="fas fa-exclamation-triangle"></i> Défice:</font> Gastaste <b>${deficitPct.toFixed(0)}%</b> acima das entradas.`;
+            }
+        }
+
+        function abrirEcraCompleto() {
+            const modal = document.getElementById("modal-logs");
+            const scroller = document.getElementById("modal-lista-rows");
+            scroller.innerHTML = "";
+            modal.style.display = "flex";
+
+            if(bd.transacoes.length === 0) {
+                scroller.innerHTML = `<p style="text-align:center; color:var(--text-secondary); margin-top:40px; font-size:0.85rem;">Arquivo de auditoria vazio.</p>`;
+                return;
+            }
+
+            bd.transacoes.forEach(t => {
+                const div = document.createElement("div");
+                div.className = `history-row ${t.tipo}`;
+                div.style.background = "#11152c";
+                div.style.padding = "12px";
+                
+                let sinal = t.tipo === 'in' ? '+' : (t.tipo === 'reversed' ? '±' : '-');
+                let cor = t.tipo === 'in' ? 'var(--success)' : (t.tipo === 'out' ? 'var(--secondary)' : (t.tipo === 'saved' ? 'var(--primary)' : 'var(--warning)'));
+                let dataF = new Date(t.data).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric', hour:'2-digit', minute:'2-digit'});
+
+                let btnEstorno = t.tipo !== 'reversed' ? `<button class="btn-reverse" style="font-size:1.05rem;" onclick="estornarTransacao(${t.id})"><i class="fas fa-undo-alt"></i></button>` : '';
+
+                div.innerHTML = `
+                    <div class="details">
+                        <span style="font-size:0.88rem; color:#fff; font-weight:600;">${t.nome}</span>
+                        <span class="date" style="font-size:0.7rem; margin-top:3px;">Registo permanente: ${dataF}</span>
+                    </div>
+                    <div class="history-right-side">
+                        <span style="font-size:0.95rem; font-weight:700; color:${cor}">${sinal}${t.valor.toFixed(2)} MT</span>
+                        ${btnEstorno}
+                    </div>
+                `;
+                scroller.appendChild(div);
+            });
+        }
+
+        function fecharEcraCompleto() { document.getElementById("modal-logs").style.display = "none"; }
+
+        function recalcularDashboard() {
+            if(bd.totalGastoGlobal < 0) bd.totalGastoGlobal = 0;
+
+            document.getElementById("saldo-general").innerText = `${bd.saldoBancario.toFixed(2)} MT`;
+            document.getElementById("total-gasto-master").innerText = `${bd.totalGastoGlobal.toFixed(2)} MT`;
+
+            renderizarObjetivos();
+            
+            const activeBtn = document.querySelector('.filter-btn.active');
+            if (activeBtn && activeBtn.id === 'f-outros') {
+                executarRenderEAnaliticos('calendario');
+            } else {
+                executarRenderEAnaliticos(activeBtn ? activeBtn.id.replace('f-', '') : 'hoje');
+            }
+        }
+
+        window.onload = function() { recalcularDashboard(); };
+    </script>
+</body>
+</html>
